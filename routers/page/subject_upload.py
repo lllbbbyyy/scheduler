@@ -5,6 +5,8 @@ from .templates import templates
 router = APIRouter()
 
 
-@router.get("/index", response_class=HTMLResponse)
+@router.get("/subject_upload", response_class=HTMLResponse)
 async def render_page(request: Request):
-    return templates.TemplateResponse('index.html', {"request": request})
+    return templates.TemplateResponse('subject_upload.html', {"request": request})
+
+

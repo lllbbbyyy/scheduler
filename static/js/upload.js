@@ -1,10 +1,24 @@
 let j = {
-    "type":"page",
+    "type": "page",
     "title": "数据上传",
     "body": [
         {
             "type": "button",
-            "label": "教师信息上传",
+            "label": "科目信息",
+            "actionType": "url",
+            "dialog": {
+                "title": "系统提示",
+                "body": "对你点击了"
+            },
+            "size": "lg",
+            "block": true,
+            "level": "warning",
+            "url": "http://127.0.0.1:5700/page/subject_upload",
+            "blank": false
+        },
+        {
+            "type": "button",
+            "label": "教师信息",
             "actionType": "url",
             "dialog": {
                 "title": "系统提示",
@@ -18,7 +32,7 @@ let j = {
         },
         {
             "type": "button",
-            "label": "教师课程表上传",
+            "label": "教师课程表信息",
             "actionType": "url",
             "dialog": {
                 "title": "系统提示",

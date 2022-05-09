@@ -6,5 +6,5 @@ router = APIRouter()
 
 
 @router.get("/upload", response_class=HTMLResponse)
-async def read_item(request: Request):
+async def render_page(request: Request):
     return templates.TemplateResponse('upload.html', {"request": request})

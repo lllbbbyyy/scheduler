@@ -1,13 +1,25 @@
+import os
 from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
+from routers.data.db_manage import models
+from routers.data.db_manage.database import engine
+
+models.Base.metadata.create_all(bind=engine)
+
 from routers.page import router as page_router
+from routers.data import router as data_router
 
 import uvicorn as u
 
+data_path = './user_data'
+if not os.path.exists(data_path):
+    os.mkdir(data_path)
+
 app = FastAPI()
 app.include_router(page_router)
+app.include_router(data_router)
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
