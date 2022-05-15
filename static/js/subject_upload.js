@@ -3,13 +3,28 @@ j = {
     "title": "科目信息",
     "body": [
         {
+            "type": "tpl",
+            "tpl": '科目信息供提交排考信息时使用，需要进行的排考的科目必须是已有的科目',
+            "inline": false
+        },
+        {
             "type": "crud",
-            "api": "get:http://127.0.0.1:5700/data/subject_info",
+            "api": "get:" + config_url + ":" + config_port + "/data/subject_info",
+            "source": "${items | filter:subject_name:match:keywords}",
+            "filter": {
+                "body": [
+                    {
+                        "type": "input-text",
+                        "name": "keywords",
+                        "label": "科目信息"
+                    }
+                ]
+            },
             "columns": [
                 {
                     "name": "subject_name",
                     "label": "科目信息",
-                    "type": "text"
+                    "type": "text",
                 },
                 {
                     "type": "operation",
@@ -24,7 +39,7 @@ j = {
                             "confirmText": "确定要删除？",
                             "api": {
                                 "method": "delete",
-                                "url": "http://127.0.0.1:5700/data/subject_info",
+                                "url": config_url + ":" + config_port + "/data/subject_info",
                                 "data": {
                                     "subject_name": "${subject_name}"
                                 }
@@ -64,7 +79,7 @@ j = {
                         "title": "新增",
                         "body": {
                             "type": "form",
-                            "api": "post:http://127.0.0.1:5700/data/subject_info",
+                            "api": "put:" + config_url + ":" + config_port + "/data/subject_info",
                             "body": [
                                 {
                                     "type": "input-text",
@@ -86,21 +101,10 @@ j = {
             "primaryField": "subject_name",
             "syncLocation": false,
             "loadDataOnce": true
-        },
-        {
-            "type": "button",
-            "label": "返回上一级",
-            "actionType": "url",
-            "dialog": {
-                "title": "系统提示",
-                "body": "对你点击了"
-            },
-            "size": "lg",
-            "level": "primary",
-            "url": "http://127.0.0.1:5700/page/upload",
-            "blank": false,
-            "className": "m"
-        },
+        }
+    ],
+    "toolbar": [
+
         {
             "type": "button",
             "label": "返回主页",
@@ -110,12 +114,10 @@ j = {
                 "body": "对你点击了"
             },
             "size": "lg",
-            "level": "primary",
+            "level": "danger",
             "blank": false,
-            "url": "http://127.0.0.1:5700/page/index",
+            "url": config_url + ":" + config_port + "/page/index",
             "className": "m"
         }
-    ],
-    "toolbar": [
     ]
 };

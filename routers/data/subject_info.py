@@ -1,10 +1,9 @@
-from ast import Sub
 from fastapi import APIRouter, Path, Depends
 from typing import Optional
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from .common_schema import Result
-from .db_manage.models import Subject
+from .db_manage.models import ExamItem, Subject
 from .db_manage.database import get_db
 
 
@@ -32,6 +31,10 @@ async def batch_delete(subject_name: str = Path(..., title='通过,分隔'),
                        db: Session = Depends(get_db)):
     subject_name_list = subject_name.split(',')
     for subject_name in subject_name_list:
+        subject_item = db.query(Subject).filter(
+            Subject.name == subject_name).first()
+        db.query(ExamItem).filter(
+            ExamItem.subject_id == subject_item.id).delete()
         db.query(Subject).filter(Subject.name == subject_name).delete()
     db.commit()
     return Result()
@@ -39,12 +42,15 @@ async def batch_delete(subject_name: str = Path(..., title='通过,分隔'),
 
 @router.delete("/subject_info", description='单个删除数据')
 async def item_delete(item: Item, db: Session = Depends(get_db)):
+    subject_item = db.query(Subject).filter(
+        Subject.name == item.subject_name).first()
+    db.query(ExamItem).filter(ExamItem.subject_id == subject_item.id).delete()
     db.query(Subject).filter(Subject.name == item.subject_name).delete()
     db.commit()
     return Result()
 
 
-@router.post("/subject_info", description='增添科目信息')
+@router.put("/subject_info", description='增添科目信息')
 async def add_item(item: Item, db: Session = Depends(get_db)):
     db_item = Subject(name=item.subject_name)
     if db.query(Subject).filter(Subject.name == db_item.name).first():

@@ -4,35 +4,35 @@ let j = {
     "body": [
         {
             "type": "button",
-            "label": "科目信息",
+            "label": "高一数据统计",
             "actionType": "url",
             "dialog": {
                 "title": "系统提示",
                 "body": "对你点击了"
             },
             "size": "lg",
-            "block": true,
-            "level": "warning",
-            "url": "http://127.0.0.1:"+config_port+"/page/subject_upload",
-            "blank": false
-        },
-        {
-            "type": "button",
-            "label": "教师信息",
-            "actionType": "url",
-            "dialog": {
-                "title": "系统提示",
-                "body": "对你点击了"
-            },
-            "size": "lg",
-            "block": true,
             "level": "primary",
-            "url": config_url+":"+config_port+"/page/teacher_info",
+            "block": true,
+            "blank": false,
+            "url": config_url+":"+config_port+"/page/statistics?grade=高一"
+        },
+        {
+            "type": "button",
+            "label": "高二数据统计",
+            "actionType": "url",
+            "dialog": {
+                "title": "系统提示",
+                "body": "对你点击了"
+            },
+            "size": "lg",
+            "level": "light",
+            "block": true,
+            "url": config_url+":"+config_port+"/page/statistics?grade=高二",
             "blank": false
         },
         {
             "type": "button",
-            "label": "考试列表",
+            "label": "高三数据统计",
             "actionType": "url",
             "dialog": {
                 "title": "系统提示",
@@ -41,22 +41,23 @@ let j = {
             "size": "lg",
             "level": "success",
             "block": true,
-            "url": config_url+":"+config_port+"/page/exam_list",
+            "url": config_url+":"+config_port+"/page/statistics?grade=高三",
             "blank": false
-        },
-        {
-            "type": "button",
-            "label": "数据统计",
-            "actionType": "url",
-            "dialog": {
-                "title": "系统提示",
-                "body": "对你点击了"
-            },
-            "blank": false,
-            "url": config_url+":"+config_port+"/page/statistics_select",
-            "size": "lg",
-            "level": "danger",
-            "block": true
         }
+    ],
+    "toolbar": [{
+        "type": "button",
+        "label": "返回主页",
+        "actionType": "url",
+        "dialog": {
+            "title": "系统提示",
+            "body": "对你点击了"
+        },
+        "size": "lg",
+        "level": "danger",
+        "blank": false,
+        "url": config_url + ":" + config_port + "/page/index",
+        "className": "m"
+    }
     ]
 };
