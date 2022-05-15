@@ -12,6 +12,7 @@ import openpyxl
 
 class Item(BaseModel):
     teacher_name: str
+    extra_hour: float = 0
 
 
 router = APIRouter()
@@ -40,12 +41,21 @@ async def get_all_item(teacher_name: str, db: Session = Depends(get_db)):
 @router.get("/teacher_info", description='查询所有教师信息（不包括贡献度）')
 async def get_all_item(page: Optional[int] = None,
                        perPage: Optional[int] = None,
+                       keywords: Optional[str] = '',
                        db: Session = Depends(get_db)):
-    all_item: list[Teacher] = db.query(Teacher).all()
+    all_item: list[Teacher] = db.query(Teacher).filter(
+        Teacher.name.like('%' + keywords + '%')).all()
+    list_len = len(all_item)
     items_list = {'items': []}
-    for item in all_item:
+    begin_index = (page - 1) * perPage
+    for i in range(perPage):
+        if begin_index + i >= list_len:
+            break
+        item = all_item[begin_index + i]
         items_list["items"].append(Item(teacher_name=item.name))
+    items_list['total'] = list_len
     r = Result(data=items_list)
+    #print(r)
     return r
 
 
@@ -90,9 +100,19 @@ async def item_delete(item: Item, db: Session = Depends(get_db)):
     return Result()
 
 
+class AddItem(BaseModel):
+    teacher_name: str
+    extra_hour: float = 0
+    is_duty: bool = False
+    is_charge: bool = False
+
+
 @router.put("/teacher_info", description='增添教师信息')
-async def add_item(item: Item, db: Session = Depends(get_db)):
-    db_item = Teacher(name=item.teacher_name)
+async def add_item(item: AddItem, db: Session = Depends(get_db)):
+    db_item = Teacher(name=item.teacher_name,
+                      extra_hour=item.extra_hour,
+                      need_duty=item.is_duty,
+                      need_charge=item.is_charge)
     if db.query(Teacher).filter(Teacher.name == db_item.name).first():
         return Result(status=-1, msg='已有该教师')
     db.add(db_item)
@@ -110,18 +130,31 @@ async def add_item(file: UploadFile, db: Session = Depends(get_db)):
         wb = openpyxl.load_workbook(tmp)
     db_item_list = []
     for ws in wb:
+        db_item = None
         for row in ws.iter_rows():
             for cell in row:
                 v: str = cell.value
                 if isinstance(v, str) and v[0] != '#':
-                    db_item = Teacher(name=v)
-                    if db.query(Teacher).filter(
-                            Teacher.name == db_item.name).first():
-                        return Result(status=-1,
-                                      msg=ws.title + '表第' + str(cell.row) +
-                                      '行，第' + str(cell.column) + '列：' + v +
-                                      '，已有该教师，导入失败')
-                    db_item_list.append(db_item)
+                    v.replace(':', '：')
+                    if '额外课时：' in v:
+                        v_list = v.split('：')
+                        if db_item is not None:
+                            db_item.extra_hour = float(v_list[-1])
+                    elif '两处' == v:
+                        if db_item is not None:
+                            db_item.need_duty = True
+                    elif '行政' == v:
+                        if db_item is not None:
+                            db_item.need_charge = True
+                    else:
+                        db_item = Teacher(name=v)
+                        if db.query(Teacher).filter(
+                                Teacher.name == db_item.name).first():
+                            return Result(status=-1,
+                                          msg=ws.title + '表第' + str(cell.row) +
+                                          '行，第' + str(cell.column) + '列：' + v +
+                                          '，已有该教师，导入失败')
+                        db_item_list.append(db_item)
     db.add_all(db_item_list)
     db.commit()
     return Result()

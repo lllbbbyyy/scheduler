@@ -1,3 +1,4 @@
+from calendar import week
 from datetime import datetime
 from enum import unique
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Float, DateTime
@@ -27,16 +28,14 @@ class Teacher(Base):
                 nullable=False)
     name = Column(String(20), index=True, unique=True, nullable=False)
     #contribution = Column(Float, default=0, server_default='0')
-    extra_hour = Column(Integer, default=0, server_default='0')
+    extra_hour = Column(Float, default=0, server_default='0')
     grade1 = Column(Boolean, default=False, server_default='False')
     grade2 = Column(Boolean, default=False, server_default='False')
     grade3 = Column(Boolean, default=False, server_default='False')
     #执勤
     need_duty = Column(Boolean, default=False, server_default='False')
-    duty_hour = Column(Integer, default=0, server_default='0')
     #主考
     need_charge = Column(Boolean, default=False, server_default='False')
-    charge_hour = Column(Integer, default=0, server_default='0')
 
 
 class CourseItem(Base):
@@ -83,6 +82,17 @@ class ExamItem(Base):
     begin_time = Column(String(20), nullable=False)
     end_time = Column(String(20), nullable=False)
     week = Column(Integer, nullable=False)
+    #0表示正常考试，1表示两处需求
+    type = Column(Integer, default=0, server_default='0')
+
+    def clone(self):
+        return ExamItem(subject_id=self.subject_id,
+                        exam_id=self.exam_id,
+                        needed_num=self.needed_num,
+                        begin_time=self.begin_time,
+                        end_time=self.end_time,
+                        week=self.week,
+                        type=self.type)
 
 
 class LimitItem(Base):
@@ -115,3 +125,5 @@ class ScheduledItem(Base):
     end_time = Column(String(20), nullable=False)
     week = Column(Integer, nullable=False)
     grade = Column(String(5), nullable=False)
+    #0表示正常条目，1表示两处需求，2表示行政需求
+    type = Column(Integer, default=0, server_default='0')

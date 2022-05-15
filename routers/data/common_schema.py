@@ -30,3 +30,6 @@ class TimeStr():
             r += '0'
         r += str(self.min)
         return r
+
+    def sub_Timestr(self,another):
+        return abs(self.hour-another.hour+(self.min-another.min)/60)

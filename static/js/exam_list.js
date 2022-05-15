@@ -5,8 +5,18 @@ j = {
         {
             "type": "crud",
             "api": "get:" + config_url + ":" + config_port + "/data/exam_info",
+            "source": "${items | filter:exam_name:match:keywords}",
+            "filter": {
+                "body": [
+                    {
+                        "type": "input-text",
+                        "name": "keywords",
+                        "label": "考试名称"
+                    }
+                ]
+            },
             "defaultParams": {
-                "perPage": 50
+                "perPage": 1
             },
             "columns": [
                 {
@@ -32,6 +42,53 @@ j = {
                     "primaryField": "time_segment",
                     "syncLocation": false,
                     "loadDataOnce": true,
+                    "defaultParams": {
+                        "perPage": 100
+                    },
+
+                    "headerToolbar": [
+                        "bulkActions",
+                        "pagination",
+                        {
+                            "type": "export-excel",
+                            "label": "导出 Excel"
+                        }
+                    ]
+                }
+                , {
+                    "type": "crud",
+                    "label": "两处排考表",
+                    "api": config_url + ":" + config_port + "/data/exam_info/scheduled_duty_items?exam_id=${exam_id}",
+                    "quickSaveApi": "post:" + config_url + ":" + config_port + "/data/exam_info/scheduled_duty_items?exam_id=${exam_id}",
+                    "combineNum": 1,
+                    "primaryField": "time_segment",
+                    "syncLocation": false,
+                    "loadDataOnce": true,
+                    "defaultParams": {
+                        "perPage": 100
+                    },
+
+                    "headerToolbar": [
+                        "bulkActions",
+                        "pagination",
+                        {
+                            "type": "export-excel",
+                            "label": "导出 Excel"
+                        }
+                    ]
+                }
+                , {
+                    "type": "crud",
+                    "label": "行政排考表",
+                    "api": config_url + ":" + config_port + "/data/exam_info/scheduled_charge_items?exam_id=${exam_id}",
+                    "quickSaveApi": "post:" + config_url + ":" + config_port + "/data/exam_info/scheduled_charge_items?exam_id=${exam_id}",
+                    "combineNum": 1,
+                    "primaryField": "time_segment",
+                    "syncLocation": false,
+                    "loadDataOnce": true,
+                    "defaultParams": {
+                        "perPage": 100
+                    },
 
                     "headerToolbar": [
                         "bulkActions",
@@ -86,18 +143,41 @@ j = {
                 "bulkDelete",
                 "delete"
             ],
-            "headerToolbar": [
+            "headerToolbar": [{
+                "label": "新增考试并进行排考",
+                "type": "button",
+                "actionType": "dialog",
+                "level": "primary",
+                "dialog": {
+                    "title": "新增考试并进行排考",
+                    "body": {
+                        "type": "form",
+                        "title": "上传",
+                        "api": "put:" + config_url + ":" + config_port + "/data/exam_info/file",
+                        "body": [
+                            {
+                                "type": "input-file",
+                                "name": "file",
+                                "btnLabel": "请选择文件",
+                                "accept": ".xlsx",
+                                "fileField": "file",
+                                "autoUpload": false,
+                                "hideUploadButton": true,
+                                "asBlob": true,
+                                "asBase64": false
+
+                            }
+                        ]
+                    }
+                }
+            },
                 "bulkActions",
                 "pagination"
-            ],
-            "perPageAvailable": [
-                10
             ],
             "messages": {
             },
             "primaryField": "exam_id",
-            "syncLocation": false,
-            "loadDataOnce": true
+            "syncLocation": true
         }
     ],
     "toolbar": [{

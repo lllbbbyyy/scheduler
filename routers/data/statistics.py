@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from .common_schema import Result, TimeStr
 from .db_manage.models import Subject, Exam, ExamItem, LimitItem, Teacher, ScheduledItem
 from .db_manage.database import get_db
-from .scheduler import scheduler, get_data
+from .scheduler import get_data_duty, scheduler, get_data
 
 import datetime
 import openpyxl
@@ -17,10 +17,10 @@ class Item(BaseModel):
     teacher_name: str
     class_contribution: float
     exam_contribution: float
-    all_contribution:float
-    extra_class_num: int
-    week_class_num: int
-    exam_hour_sum: int
+    all_contribution: float
+    extra_class_num: float
+    week_class_num: float
+    exam_hour_sum: float
 
 
 router = APIRouter()
@@ -30,14 +30,18 @@ router = APIRouter()
 async def get_class_hour_charts(grade: str):
     teacher_list, teacher_extra_info, all_class_times, all_exam_hour = get_data(
         grade)
-    teacher_list.sort(key=lambda x:teacher_extra_info[x.id]['course_item_list_len'] +
-                  x.extra_hour)
+    teacher_list.sort(key=lambda x: teacher_extra_info[x.id][
+        'course_item_list_len'] + x.extra_hour)
     teacher_list.reverse()
     data = {
         'title': {},
         'tooltip': {},
         'legend': {},
-        'xAxis': {},
+        'xAxis': {
+            'axisLabel': {
+                'interval': 0
+            }
+        },
         'yAxis': {},
         'series': []
     }
@@ -58,14 +62,18 @@ async def get_class_hour_charts(grade: str):
 async def get_class_hour_charts(grade: str):
     teacher_list, teacher_extra_info, all_class_times, all_exam_hour = get_data(
         grade)
-    teacher_list.sort(key=lambda x:teacher_extra_info[
-                x.id]['scheduled_item_list_len'])
+    teacher_list.sort(
+        key=lambda x: teacher_extra_info[x.id]['scheduled_item_all_hour'])
     teacher_list.reverse()
     data = {
         'title': {},
         'tooltip': {},
         'legend': {},
-        'xAxis': {},
+        'xAxis': {
+            'axisLabel': {
+                'interval': 0
+            }
+        },
         'yAxis': {},
         'series': []
     }
@@ -76,8 +84,7 @@ async def get_class_hour_charts(grade: str):
     for teacher in teacher_list:
         data['xAxis']['data'].append(teacher.name)
         data['series'][0]['data'].append(
-            teacher_extra_info[teacher.id]['scheduled_item_list_len'] +
-            teacher.extra_hour)
+            teacher_extra_info[teacher.id]['scheduled_item_all_hour'])
 
     return Result(data=data)
 
@@ -91,7 +98,11 @@ async def get_class_hour_charts(grade: str):
         'title': {},
         'tooltip': {},
         'legend': {},
-        'xAxis': {},
+        'xAxis': {
+            'axisLabel': {
+                'interval': 0
+            }
+        },
         'yAxis': {},
         'series': []
     }
@@ -111,11 +122,120 @@ async def get_class_hour_charts(grade: str):
             exam_contribution = 0
         else:
             exam_contribution = teacher_extra_info[
-                teacher.id]['scheduled_item_list_len'] / all_exam_hour
+                teacher.id]['scheduled_item_all_hour'] / all_exam_hour
         data['series'][0]['data'].append(class_contribution +
                                          exam_contribution)
 
     return Result(data=data)
+
+
+@router.get("/statistics/duty_hour_charts", description='获取统计信息')
+async def get_charts():
+    teacher_list, teacher_extra_info, all_exam_hour = get_data_duty()
+    teacher_list.reverse()
+    data = {
+        'title': {},
+        'tooltip': {},
+        'legend': {},
+        'xAxis': {
+            'axisLabel': {
+                'interval': 0
+            }
+        },
+        'yAxis': {},
+        'series': []
+    }
+    data['title']['text'] = '两处贡献度统计表'
+    data['legend']['data'] = ['两处监考时长']
+    data['xAxis']['data'] = []
+    data['series'] = [{"name": '两处监考时长', 'type': 'bar', 'data': []}]
+    for teacher in teacher_list:
+        data['xAxis']['data'].append(teacher.name)
+        data['series'][0]['data'].append(teacher_extra_info[teacher.id]['scheduled_item_type1_all_hour'])
+
+    return Result(data=data)
+
+
+@router.get("/statistics/duty", description='获取统计信息')
+async def get_statistics(page: Optional[int] = None,
+                         perPage: Optional[int] = None,
+                         db: Session = Depends(get_db)):
+    teacher_list, teacher_extra_info, all_exam_hour = get_data_duty()
+    teacher_list.reverse()
+    item_list: list[dict] = []
+    for teacher in teacher_list:
+        item_list.append({
+            'teacher_name':
+            teacher.name,
+            'exam_hour':
+            teacher_extra_info[teacher.id]['scheduled_item_type1_all_hour']
+        })
+    data = {
+        'items': item_list,
+    }
+    r = Result(data=data)
+    return r
+
+@router.get("/statistics/charge_hour_charts", description='获取统计信息')
+async def get_charts():
+    db=next(get_db())
+    teacher_list = db.query(Teacher).filter(Teacher.need_charge == True).all()
+    teacher_charge_cnt = {}
+    for teacher in teacher_list:
+        teacher_charge_cnt[teacher.id] = db.query(ScheduledItem).filter(
+            ScheduledItem.type == 2,
+            ScheduledItem.teacher_id == teacher.id).count()
+    teacher_list.sort(key=lambda x: teacher_charge_cnt[x.id])
+    teacher_list.reverse()
+    data = {
+        'title': {},
+        'tooltip': {},
+        'legend': {},
+        'xAxis': {
+            'axisLabel': {
+                'interval': 0
+            }
+        },
+        'yAxis': {},
+        'series': []
+    }
+    data['title']['text'] = '行政贡献度统计表'
+    data['legend']['data'] = ['行政监考次数']
+    data['xAxis']['data'] = []
+    data['series'] = [{"name": '行政监考次数', 'type': 'bar', 'data': []}]
+    for teacher in teacher_list:
+        data['xAxis']['data'].append(teacher.name)
+        data['series'][0]['data'].append(teacher_charge_cnt[teacher.id])
+
+    return Result(data=data)
+
+
+@router.get("/statistics/charge", description='获取统计信息')
+async def get_statistics(page: Optional[int] = None,
+                         perPage: Optional[int] = None,
+                         db: Session = Depends(get_db)):
+    teacher_list = db.query(Teacher).filter(Teacher.need_charge == True).all()
+    teacher_charge_cnt = {}
+    for teacher in teacher_list:
+        teacher_charge_cnt[teacher.id] = db.query(ScheduledItem).filter(
+            ScheduledItem.type == 2,
+            ScheduledItem.teacher_id == teacher.id).count()
+    teacher_list.sort(key=lambda x: teacher_charge_cnt[x.id])
+    teacher_list.reverse()
+    item_list: list[dict] = []
+    for teacher in teacher_list:
+        item_list.append({
+            'teacher_name':
+            teacher.name,
+            'exam_hour':
+            teacher_charge_cnt[teacher.id]
+        })
+    data = {
+        'items': item_list,
+    }
+    r = Result(data=data)
+    return r
+
 
 
 @router.get("/statistics", description='获取统计信息')
@@ -138,21 +258,28 @@ async def get_statistics(grade: str,
             exam_contribution = 0
         else:
             exam_contribution = teacher_extra_info[
-                teacher.id]['scheduled_item_list_len'] / all_exam_hour
+                teacher.id]['scheduled_item_all_hour'] / all_exam_hour
         item_list.append(
             Item(teacher_name=teacher.name,
                  class_contribution=class_contribution,
                  exam_contribution=exam_contribution,
-                 all_contribution=exam_contribution+class_contribution,
+                 all_contribution=exam_contribution + class_contribution,
                  extra_class_num=teacher.extra_hour,
                  week_class_num=teacher_extra_info[
                      teacher.id]['course_item_list_len'],
                  exam_hour_sum=teacher_extra_info[teacher.id]
-                 ['scheduled_item_list_len']))
-    data={'items': item_list,'exam_all_num':db.query(Exam).filter(Exam.grade==grade).count(),'exam_all_hour':all_exam_hour,'exam_all_teacher':len(teacher_list),'exam_arr_num':0,'exam_arr_hour':0}
-    if len(teacher_list)!=0:
-        data['exam_arr_hour']=all_exam_hour/data['exam_all_teacher']
-        data['exam_arr_num']=data['exam_all_num']/data['exam_all_teacher']
+                 ['scheduled_item_all_hour']))
+    data = {
+        'items': item_list,
+        'exam_all_num': db.query(Exam).filter(Exam.grade == grade).count(),
+        'exam_all_hour': all_exam_hour,
+        'exam_all_teacher': len(teacher_list),
+        'exam_arr_num': 0,
+        'exam_arr_hour': 0
+    }
+    if len(teacher_list) != 0:
+        data['exam_arr_hour'] = all_exam_hour / data['exam_all_teacher']
+        data['exam_arr_num'] = data['exam_all_num'] / data['exam_all_teacher']
 
     r = Result(data=data)
     return r

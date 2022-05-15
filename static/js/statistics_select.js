@@ -14,7 +14,7 @@ let j = {
             "level": "primary",
             "block": true,
             "blank": false,
-            "url": config_url+":"+config_port+"/page/statistics?grade=高一"
+            "url": config_url + ":" + config_port + "/page/statistics?grade=高一"
         },
         {
             "type": "button",
@@ -27,7 +27,7 @@ let j = {
             "size": "lg",
             "level": "light",
             "block": true,
-            "url": config_url+":"+config_port+"/page/statistics?grade=高二",
+            "url": config_url + ":" + config_port + "/page/statistics?grade=高二",
             "blank": false
         },
         {
@@ -41,7 +41,33 @@ let j = {
             "size": "lg",
             "level": "success",
             "block": true,
-            "url": config_url+":"+config_port+"/page/statistics?grade=高三",
+            "url": config_url + ":" + config_port + "/page/statistics?grade=高三",
+            "blank": false
+        }, {
+            "type": "button",
+            "label": "两处数据统计",
+            "actionType": "url",
+            "dialog": {
+                "title": "系统提示",
+                "body": "对你点击了"
+            },
+            "size": "lg",
+            "level": "warning",
+            "block": true,
+            "url": config_url + ":" + config_port + "/page/statistics/duty",
+            "blank": false
+        },{
+            "type": "button",
+            "label": "行政数据统计",
+            "actionType": "url",
+            "dialog": {
+                "title": "系统提示",
+                "body": "对你点击了"
+            },
+            "size": "lg",
+            "level": "danger",
+            "block": true,
+            "url": config_url + ":" + config_port + "/page/statistics/charge",
             "blank": false
         }
     ],

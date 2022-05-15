@@ -1,10 +1,17 @@
 import os
+import webbrowser
 from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from routers.data.db_manage import models
 from routers.data.db_manage.database import engine
+
+from routers.page.page_common import config
+
+data_path = './user_data'
+if not os.path.exists(data_path):
+    os.mkdir(data_path)
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -13,15 +20,11 @@ from routers.data import router as data_router
 
 import uvicorn as u
 
-data_path = './user_data'
-if not os.path.exists(data_path):
-    os.mkdir(data_path)
-
 app = FastAPI()
 app.include_router(page_router)
 app.include_router(data_router)
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/static", StaticFiles(directory=os.getcwd()+"/static"), name="static")
 
 
 # 重定向到首页
@@ -30,13 +33,21 @@ async def redirect():
     return RedirectResponse('/page/index')
 
 
-# @app.post("/teacher_class_file_upload")
-# def teacher_class_file_upload(teacher_class_file: UploadFile):
-#     print(teacher_class_file.filename)
-#     contents=teacher_class_file.file.read()
-#     with open(teacher_class_file.filename,'wb') as f:
-#         f.write(contents)
-#     return {"status": 0, "msg": "", "data": {}}
-
 if __name__ == '__main__':
-    u.run(app, host="127.0.0.1", port=5700)
+    log_config = u.config.LOGGING_CONFIG
+    if not config['debug']:
+        log_config['handlers'] = {
+            "default": {
+                "formatter": "default",
+                "class": "logging.handlers.TimedRotatingFileHandler",
+                "filename": data_path + '/' + 'scheduler.log'
+            },
+            "access": {
+                "formatter": "access",
+                "class": "logging.handlers.TimedRotatingFileHandler",
+                "filename": data_path + '/' + 'scheduler.log'
+            },
+        }
+    print('请使用浏览器访问' + config['url'] + ':' + str(config['port']) + ' 来使用排考系统')
+    webbrowser.open_new(config['url'] + ':' + str(config['port']))
+    u.run(app, host="127.0.0.1", port=5700, log_config=log_config)
