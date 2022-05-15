@@ -30,7 +30,7 @@ j = {
                     "type": "text"
                 }, {
                     "name": "exam_hour",
-                    "label": "行政监考时间",
+                    "label": "两处监考时间",
                     "type": "text"
                 }
             ],
