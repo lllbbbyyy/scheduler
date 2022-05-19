@@ -66,9 +66,9 @@ async def add_coursetable(file: UploadFile, db: Session = Depends(get_db)):
                 if isinstance(v, str) and '教师：' in v:
                     teacher_name = v.split('：')[-1]
                     teacher_grade_dict[teacher_name] = {
-                        'grade1': False,
-                        'grade2': False,
-                        'grade3': False
+                        'grade1': 0,
+                        'grade2': 0,
+                        'grade3': 0
                     }
                     teacher_item = db.query(Teacher).filter(
                         Teacher.name == teacher_name).first()
@@ -80,9 +80,9 @@ async def add_coursetable(file: UploadFile, db: Session = Depends(get_db)):
                 if isinstance(v, str) and '教师:' in v:
                     teacher_name = v.split(':')[-1]
                     teacher_grade_dict[teacher_name] = {
-                        'grade1': False,
-                        'grade2': False,
-                        'grade3': False
+                        'grade1': 0,
+                        'grade2': 0,
+                        'grade3': 0
                     }
                     teacher_item = db.query(Teacher).filter(
                         Teacher.name == teacher_name).first()
@@ -103,13 +103,13 @@ async def add_coursetable(file: UploadFile, db: Session = Depends(get_db)):
                                                  grade='')
                     if isinstance(v, str):
                         if '高一' in v:
-                            teacher_grade_dict[teacher_name]['grade1'] = True
+                            teacher_grade_dict[teacher_name]['grade1'] += 1
                             course_item.grade = '高一'
                         if '高二' in v:
-                            teacher_grade_dict[teacher_name]['grade2'] = True
+                            teacher_grade_dict[teacher_name]['grade2'] += 1
                             course_item.grade = '高二'
                         if '高三' in v:
-                            teacher_grade_dict[teacher_name]['grade3'] = True
+                            teacher_grade_dict[teacher_name]['grade3'] += 1
                             course_item.grade = '高三'
 
                     course_item_list.append(course_item)
@@ -124,8 +124,18 @@ async def add_coursetable(file: UploadFile, db: Session = Depends(get_db)):
     db.commit()
     if len(teacher_grade_dict) != 0:
         for k, v in teacher_grade_dict.items():
-            db.query(Teacher).filter(Teacher.name == k).update(
-                v, synchronize_session="fetch")
+            max_vv = 0
+            for _, vv in v.items():
+                max_vv = max(max_vv, vv)
+            update_data = {}
+            for kk, vv in v.items():
+                update_data[kk] = False
+            for kk, vv in v.items():
+                if vv == max_vv:
+                    update_data[kk] = True
+                    db.query(Teacher).filter(Teacher.name == k).update(
+                        update_data, synchronize_session="fetch")
+                    break
         db.commit()
     # db_item = Teacher(name=item.teacher_name)
     # if db.query(Teacher).filter(Teacher.name == db_item.name).first():
