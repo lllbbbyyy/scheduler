@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Path, Depends, UploadFile
+from fastapi.responses import StreamingResponse, FileResponse
 from tempfile import NamedTemporaryFile
 from typing import Optional
 from pydantic import BaseModel
@@ -26,8 +27,9 @@ async def get_all_item(page: Optional[int] = None,
                        perPage: Optional[int] = None,
                        keywords: Optional[str] = '',
                        db: Session = Depends(get_db)):
-    all_item = db.query(Exam).filter(Exam.name.like('%' + keywords + '%')).all()
-    all_item.sort(key=lambda x:x.create_time)
+    all_item = db.query(Exam).filter(Exam.name.like('%' + keywords +
+                                                    '%')).all()
+    all_item.sort(key=lambda x: x.create_time)
     all_item.reverse()
     list_len = len(all_item)
     items_list = {'items': []}
@@ -166,7 +168,7 @@ async def add_item(file: UploadFile, db: Session = Depends(get_db)):
 
 
 @router.get("/exam_info/scheduled_items", description='查询已排考表条目信息')
-async def get_all_item(exam_id: int, db: Session = Depends(get_db)):
+def get_all_item(exam_id: int, db: Session = Depends(get_db)):
     scheduled_items_list: list[ScheduledItem] = db.query(ScheduledItem).filter(
         ScheduledItem.exam_id == exam_id, ScheduledItem.type == 0).all()
     scheduled_items_dict = {}
@@ -224,7 +226,7 @@ async def get_all_item(exam_id: int, db: Session = Depends(get_db)):
 
 
 @router.get("/exam_info/scheduled_duty_items", description='查询已排考两处表条目信息')
-async def get_all_duty_item(exam_id: int, db: Session = Depends(get_db)):
+def get_all_duty_item(exam_id: int, db: Session = Depends(get_db)):
     scheduled_items_list: list[ScheduledItem] = db.query(ScheduledItem).filter(
         ScheduledItem.exam_id == exam_id, ScheduledItem.type == 1).all()
     scheduled_items_dict = {}
@@ -282,7 +284,7 @@ async def get_all_duty_item(exam_id: int, db: Session = Depends(get_db)):
 
 
 @router.get("/exam_info/scheduled_charge_items", description='查询已排考行政表条目信息')
-async def get_all_duty_item(exam_id: int, db: Session = Depends(get_db)):
+def get_all_charge_item(exam_id: int, db: Session = Depends(get_db)):
     #这里0或者1都可以，1数据量小
     exam_item_list: list[ExamItem] = db.query(ExamItem).filter(
         ExamItem.exam_id == exam_id, ExamItem.type == 1).all()
@@ -518,12 +520,108 @@ async def update_item(content: dict,
     return Result()
 
 
-# @router.put("/subject_info", description='增添科目信息')
-# async def add_item(item: Item, db: Session = Depends(get_db)):
-#     db_item = Subject(name=item.subject_name)
-#     if db.query(Subject).filter(Subject.name == db_item.name).first():
-#         return Result(status=-1, msg='已有该科目')
-#     db.add(db_item)
-#     db.commit()
-#     db.refresh(db_item)
-#     return Result()
+@router.get("/exam_info/all_excel",
+            description="导出总的排考表",
+            response_class=FileResponse)
+async def get_all_excel(exam_id: int, db: Session = Depends(get_db)):
+    scheduled_items_list: list[ScheduledItem] = db.query(ScheduledItem).filter(
+        ScheduledItem.exam_id == exam_id, ScheduledItem.type == 0).all()
+    duty_item_list: list[ScheduledItem] = db.query(ScheduledItem).filter(
+        ScheduledItem.exam_id == exam_id, ScheduledItem.type == 1).all()
+    duty_dict = {}
+    for duty_item in duty_item_list:
+        teacher = db.query(Teacher).filter(
+            Teacher.id == duty_item.teacher_id).first()
+        duty_dict[str(duty_item.week) + duty_item.begin_time + "-" +
+                  duty_item.end_time] = teacher.name
+    charge_item_list: list[ScheduledItem] = db.query(ScheduledItem).filter(
+        ScheduledItem.exam_id == exam_id, ScheduledItem.type == 2).all()
+    charge_dict = {}
+    for charge_item in charge_item_list:
+        teacher = db.query(Teacher).filter(
+            Teacher.id == charge_item.teacher_id).first()
+        charge_dict[charge_item.week] = teacher.name
+    all_dict = {}
+    max_row_len = 0
+    col_len = 0
+    for scheduled_item in scheduled_items_list:
+        week = scheduled_item.week
+        if week not in all_dict.keys():
+            all_dict[week] = {}
+        time_segment = scheduled_item.begin_time + '-' + scheduled_item.end_time
+        if time_segment not in all_dict[week].keys():
+            needed_scheduled_item: ExamItem = db.query(ExamItem).filter(
+                ExamItem.exam_id == exam_id,
+                ExamItem.begin_time == scheduled_item.begin_time,
+                ExamItem.end_time == scheduled_item.end_time,
+                ExamItem.type == 0,
+                ExamItem.week == scheduled_item.week).first()
+            subject_item: Subject = db.query(Subject).filter(
+                Subject.id == needed_scheduled_item.subject_id).first()
+            all_dict[week][time_segment] = [
+                TimeStr(scheduled_item.begin_time).sub_Timestr(
+                    TimeStr(scheduled_item.end_time)), subject_item.name,
+                '监考老师'
+            ]
+            col_len += 1
+        teacher = db.query(Teacher).filter(
+            Teacher.id == scheduled_item.teacher_id).first()
+        all_dict[week][time_segment].append(teacher.name)
+        max_row_len = max(max_row_len, len(all_dict[week][time_segment]))
+    max_row_len -= 3
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.merge_cells(start_row=1,
+                   start_column=1,
+                   end_row=1,
+                   end_column=max_row_len + 1)
+    exam_item = db.query(Exam).filter(Exam.id == exam_id).first()
+    ws['A1'] = exam_item.name
+    week_list = list(all_dict.keys())
+    week_list.sort()
+    last_begin = 2
+    day_to_str = ['', '周一', '周二', '周三', '周四', '周五', '周六', '周日']
+    for week in week_list:
+        ws.merge_cells(start_row=2,
+                       start_column=last_begin,
+                       end_row=2,
+                       end_column=last_begin + len(all_dict[week]) - 1)
+        ws.merge_cells(start_row=8 + max_row_len,
+                       start_column=last_begin,
+                       end_row=8 + max_row_len,
+                       end_column=last_begin + len(all_dict[week]) - 1)
+        ws[chr(ord('A') - 1 + last_begin) + '2'] = day_to_str[week]
+        ws[chr(ord('A') - 1 + last_begin) +
+           str(8 + max_row_len)] = charge_dict[week]
+        time_segment_list = list(all_dict[week].keys())
+        time_segment_list.sort()
+        for i in range(len(time_segment_list)):
+            time_segment = time_segment_list[i]
+            ws[chr(ord('A') - 1 + last_begin + i) + '3'] = time_segment
+            ws[chr(ord('A') - 1 + last_begin + i) +
+               str(7 + max_row_len)] = duty_dict[str(week) + time_segment]
+            for j in range(len(all_dict[week][time_segment])):
+                col_item = all_dict[week][time_segment][j]
+                ws[chr(ord('A') - 1 + last_begin + i) + str(j + 4)] = col_item
+        last_begin += len(all_dict[week])
+    for i in range(max_row_len):
+        ws['A' + str(7 + i)] = '教室' + str(i + 1)
+    ws['A' + str(7 + max_row_len)] = '执勤'
+    ws['A' + str(8 + max_row_len)] = '主考'
+    with NamedTemporaryFile(mode='rb+', suffix='.xlsx', delete=False) as tmp:
+        wb.save(tmp.name)
+        headers = {
+            "Content-Type":
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "Content-Disposition": 'attachment; filename="exam.xlsx"'
+        }
+        return FileResponse(tmp.name, headers=headers)
+        # tmp.seek(0)
+        # stream = tmp.read()
+
+    # headers = {
+    #     'Content-Disposition':
+    #     'attachment; filename="' + exam_item.name + '.xlsx"'
+    # }
+    # return StreamingResponse(stream, headers=headers,media_type=)

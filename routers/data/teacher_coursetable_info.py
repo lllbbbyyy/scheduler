@@ -127,6 +127,8 @@ async def add_coursetable(file: UploadFile, db: Session = Depends(get_db)):
             max_vv = 0
             for _, vv in v.items():
                 max_vv = max(max_vv, vv)
+            if max_vv==0:
+                break
             update_data = {}
             for kk, vv in v.items():
                 update_data[kk] = False

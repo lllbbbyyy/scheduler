@@ -1,6 +1,7 @@
 j = {
     "type": "page",
     "title": "教师信息",
+    "name": "page",
     "body": [{
         "type": "tpl",
         "tpl": '你可以在此处通过上传Excel文件来批量导入教师姓名信息，也可以通过在下方表格中点击 新增 按钮来新增教师',
@@ -40,6 +41,7 @@ j = {
     {
         "type": "form",
         "title": "教师名单上传",
+        "reload": "window",
         "api": "put:" + config_url + ":" + config_port + "/data/teacher_info/file",
         "body": [
             {
@@ -158,6 +160,7 @@ j = {
     {
         "type": "form",
         "title": "教师课程表上传",
+        "reload": "window",
         "api": "put:" + config_url + ":" + config_port + "/data/teacher_coursetable_info/file",
         "body": [
             {

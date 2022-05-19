@@ -118,6 +118,16 @@ j = {
                                     "exam_id": "${exam_id}"
                                 }
                             }
+                        },
+                        {
+                            "type": "action",
+                            "label": "导出总排考表",
+                            "actionType": "download",
+                            "level": "link",
+                            "reload": "window",
+                            //"className": "text-danger",
+                            //"confirmText": "确定要删除？",
+                            "api": config_url + ":" + config_port + "/data/exam_info/all_excel?exam_id=${exam_id}"
                         }
                     ]
                 }
@@ -148,6 +158,7 @@ j = {
                 "type": "button",
                 "actionType": "dialog",
                 "level": "primary",
+                "reload": "window",
                 "dialog": {
                     "title": "新增考试并进行排考",
                     "body": {
