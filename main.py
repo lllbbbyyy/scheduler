@@ -4,10 +4,10 @@ from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
-from routers.data.db_manage import models
-from routers.data.db_manage.database import engine
+from scheduler.routers.data.db_manage import models
+from scheduler.routers.data.db_manage.database import engine
 
-from routers.page.page_common import config
+from scheduler.routers.page.page_common import config
 
 data_path = './user_data'
 if not os.path.exists(data_path):
@@ -15,8 +15,8 @@ if not os.path.exists(data_path):
 
 models.Base.metadata.create_all(bind=engine)
 
-from routers.page import router as page_router
-from routers.data import router as data_router
+from scheduler.routers.page import router as page_router
+from scheduler.routers.data import router as data_router
 
 import uvicorn as u
 
@@ -48,6 +48,6 @@ if __name__ == '__main__':
                 "filename": data_path + '/' + 'scheduler.log'
             },
         }
-    print('请使用浏览器访问' + config['url'] + ':' + str(config['port']) + ' 来使用排考系统')
+    print('请使用谷歌或火狐浏览器（不支持IE）访问网址：' + config['url'] + ':' + str(config['port']) + ' 来使用排考系统')
     webbrowser.open_new(config['url'] + ':' + str(config['port']))
     u.run(app, host="127.0.0.1", port=5700, log_config=log_config)

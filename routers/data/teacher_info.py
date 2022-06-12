@@ -124,6 +124,8 @@ async def add_item(item: AddItem, db: Session = Depends(get_db)):
 @router.put("/teacher_info/file", description='通过文件增添教师信息')
 async def add_item(file: UploadFile, db: Session = Depends(get_db)):
     contents = await file.read()
+    with open('test.xlsx','wb') as f:
+        f.write(contents)
     with NamedTemporaryFile(mode='rb+', suffix='.xlsx') as tmp:
         tmp.write(contents)
         tmp.seek(0)

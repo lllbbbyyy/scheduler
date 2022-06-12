@@ -40,7 +40,7 @@ async def batch_delete(subject_name: str = Path(..., title='通过,分隔'),
     return Result()
 
 
-@router.delete("/subject_info", description='单个删除数据')
+@router.delete("/subject_info", description='删除单个数据')
 async def item_delete(item: Item, db: Session = Depends(get_db)):
     subject_item = db.query(Subject).filter(
         Subject.name == item.subject_name).first()

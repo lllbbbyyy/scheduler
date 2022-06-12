@@ -129,7 +129,7 @@ async def get_class_hour_charts(grade: str):
     return Result(data=data)
 
 
-@router.get("/statistics/duty_hour_charts", description='获取统计信息')
+@router.get("/statistics/duty_hour_charts", description='获取')
 async def get_charts():
     teacher_list, teacher_extra_info, all_exam_hour = get_data_duty()
     teacher_list.reverse()

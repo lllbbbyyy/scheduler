@@ -41,7 +41,7 @@ j = {
     {
         "type": "form",
         "title": "教师名单上传",
-        "reload": "window",
+        //"reload": "window",
         "api": "put:" + config_url + ":" + config_port + "/data/teacher_info/file",
         "body": [
             {

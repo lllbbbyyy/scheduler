@@ -13,7 +13,7 @@ let j = {
             "size": "lg",
             "block": true,
             "level": "warning",
-            "url": "http://127.0.0.1:"+config_port+"/page/subject_upload",
+            "url": "http://127.0.0.1:" + config_port + "/page/subject_info",
             "blank": false
         },
         {
@@ -27,7 +27,7 @@ let j = {
             "size": "lg",
             "block": true,
             "level": "primary",
-            "url": config_url+":"+config_port+"/page/teacher_info",
+            "url": config_url + ":" + config_port + "/page/teacher_info",
             "blank": false
         },
         {
@@ -41,7 +41,7 @@ let j = {
             "size": "lg",
             "level": "success",
             "block": true,
-            "url": config_url+":"+config_port+"/page/exam_list",
+            "url": config_url + ":" + config_port + "/page/exam_info",
             "blank": false
         },
         {
@@ -53,7 +53,7 @@ let j = {
                 "body": "对你点击了"
             },
             "blank": false,
-            "url": config_url+":"+config_port+"/page/statistics_select",
+            "url": config_url + ":" + config_port + "/page/statistics_select",
             "size": "lg",
             "level": "danger",
             "block": true
